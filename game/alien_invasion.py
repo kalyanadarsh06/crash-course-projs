@@ -4,6 +4,7 @@ import pygame
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
+from enemy import Enemy
 
 class AlienInvasion:
     def __init__(self):
@@ -15,14 +16,47 @@ class AlienInvasion:
         self.ship = Ship(self)
         self.bg_color = self.settings.bg_color     
         self.bullets = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
            
     def run_game(self):
         while True:
+            if len(self.enemies) == 0:
+                self._add_enemies()
             self._check_events()
             self.ship.update()
             self.bullets.update()
+            self.enemies.update()
             self._update_screen()
     
+    def _add_enemies(self):
+        enemy = Enemy(self)
+        enemy_width = enemy.rect.width
+        available_space = self.settings.screen_width - (2 * enemy_width)
+        enemy_spacing = available_space // (self.settings.number_enemies + 1)
+        
+        for enemy_number in range(self.settings.number_enemies):
+            enemy = Enemy(self)
+            enemy.x = enemy_width + enemy_number * (enemy_width + enemy_spacing)
+            enemy.rect.x = enemy.x
+            self.enemies.add(enemy)
+    
+    def _check_bullet_enemy_collisions(self):
+        for bullet in self.bullets.copy():
+            collided_enemy = pygame.sprite.spritecollideany(bullet, self.enemies)
+            if collided_enemy:
+                collided_enemy.got_hit()
+                if collided_enemy.is_destroyed():
+                    collided_enemy.kill()
+                bullet.kill()
+            elif bullet.rect.bottom > self.screen_rect.bottom:
+                bullet.kill()
+    
+    def _check_enemy_bottom(self):
+        for enemy in self.enemies:
+            if enemy.rect.bottom >= self.screen_rect.bottom:
+                enemy.kill()
+                break
+
     def _check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -66,6 +100,10 @@ class AlienInvasion:
         self.ship.blitme()
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
+        for enemy in self.enemies.sprites():
+            enemy.draw_enemy()
+        self._check_bullet_enemy_collisions()
+        self._check_enemy_bottom()
         pygame.display.flip()
     
 if __name__ == '__main__':
