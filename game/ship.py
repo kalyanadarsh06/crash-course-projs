@@ -18,6 +18,8 @@ class Ship:
         self.moving_left = False
         self.moving_up = False
         self.moving_down = False
+        
+        self.lives = 5
     
     def blitme(self):
         self.screen.blit(self.image, self.rect)
@@ -33,3 +35,10 @@ class Ship:
             self.y += self.settings.ship_speed_y
         self.rect.x = self.x
         self.rect.y = self.y
+    
+    def loss_life(self):
+        self.lives -= 1
+        if self.lives == 0:
+            sys.exit()
+            
+        
